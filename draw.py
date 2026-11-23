@@ -3,16 +3,27 @@
 All drawing is Pillow on 1080x1920 transparent PNGs that monti.py lays over the video with ffmpeg.
 """
 import math
+import os
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1080, 1920
 YELLOW = "#FFD60A"
-HN = "/System/Library/Fonts/HelveticaNeue.ttc"  # index 1 = Bold, 10 = Medium
-SUB_FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+# The first font that exists: Mac, then Windows, then common Linux paths. (path, index for .ttc files)
+BOLD = [("/System/Library/Fonts/HelveticaNeue.ttc", 1), ("C:/Windows/Fonts/segoeuib.ttf", 0),
+        ("C:/Windows/Fonts/arialbd.ttf", 0), ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 0)]
+SUB = [("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 0), ("C:/Windows/Fonts/arialbd.ttf", 0),
+       ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 0)]
 
 
-def font(size, bold=True):
-    return ImageFont.truetype(HN, size, index=1 if bold else 10)
+def _first(fonts, size):
+    for path, index in fonts:
+        if os.path.exists(path):
+            return ImageFont.truetype(path, size, index=index)
+    raise SystemExit("No bold font found; add one to draw.py BOLD/SUB.")
+
+
+def font(size):
+    return _first(BOLD, size)
 
 
 def draw_frame(words, shown, title, path, sub_y=1330):
@@ -34,7 +45,7 @@ def draw_frame(words, shown, title, path, sub_y=1330):
             d.rounded_rectangle(box, radius=22, fill="white")
             d.text((bx - x0, y - y0), ln, font=tf, fill="black")
     if words:
-        sf = ImageFont.truetype(SUB_FONT, 84)
+        sf = _first(SUB, 84)
         sp, wl = d.textlength(" ", font=sf), [d.textlength(w, font=sf) for w in words]
         rows = [list(range(len(words)))]
         if sum(wl) + sp * (len(words) - 1) > W - 120 and len(words) > 1:

@@ -28,7 +28,7 @@ Her efekt `{"type": ..., "at": saniye}` ile başlar. `"sound": null` sesini kapa
 | `spotlight` | `dur` 3, `title` | Sadece arka plan kararır, kişi aydınlık kalır; isterse üstte büyük başlık. | boom |
 | `orbit` | `dur` 3, `items` ["Monti"], `turns` 0.35 | Kafanın üstünde sarı halka, etiketler döner; arka yarısı saçın arkasından geçer. | whoosh |
 
-`spotlight` ve `orbit` her karede kişiyi arka plandan ayırır (Vision), bu yüzden birkaç saniye sürer. Pencere, başladığı
+`spotlight` ve `orbit` her karede kişiyi arka plandan ayırır (Mac'te Apple Vision, Windows'ta MediaPipe), bu yüzden birkaç saniye sürer. Pencere, başladığı
 kesim parçasının sonunda kırpılır: efekti bir kesimin üstüne yayma.
 
 ## Kapanış

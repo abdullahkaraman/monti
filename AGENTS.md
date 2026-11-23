@@ -16,6 +16,6 @@ Sen Monti'yi kullanarak kullanıcının dikey konuşma videosunu kurguluyorsun.
 
 ## Sınırlar
 - Kaynak videonun üstüne yazma; çıktı her zaman yeni bir dosya.
-- Gemini anahtarını hiçbir dosyaya yazma. Anahtar Anahtar Zinciri'nden (`security ... -s monti -a gemini-api-key`) ya da
-  `GEMINI_API_KEY`'den okunur.
+- Gemini anahtarını hiçbir dosyaya yazma. Anahtar işletim sisteminin şifre kasasından (`keyring`, servis `monti`,
+  hesap `gemini-api-key`) ya da `GEMINI_API_KEY`'den okunur.
 - Bir adım hata verirse uydurma bir çözümle geçme; hatayı ve denediğini kullanıcıya söyle.

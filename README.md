@@ -13,29 +13,25 @@ Dikey konuşma videolarını kurgulayan küçük bir kurgucu. Kurgu programı yo
 
 Hikâyesi: https://iyigirisim.net/v/monti
 
-Mac (Apple Silicon) içindir: Whisper'ın hızlı sürümü ve kişiyi arka plandan ayıran Vision, Mac'e özel.
+Mac (Apple Silicon) ve Windows 10/11'de çalışır. Mac'te Whisper'ın Mac çipine özel hızlı sürümünü ve kişiyi arka plandan
+ayırmak için Apple Vision'ı; Windows'ta OpenAI'nin Whisper'ını ve MediaPipe'ı kullanır.
 
 ## Kurulum
 
 En kolayı: [kurulum dosyasını](https://iyigirisim.net/covers/monti-kurulum.md) Claude Code'a ver ve "adımları sırayla uygula" de.
-Sonra bu depoyu indir ve iki küçük aracı derle:
-
-```bash
-git clone https://github.com/abdullahkaraman/monti ~/monti/monti
-cd ~/monti/monti
-swiftc -O tools/personmask.swift -o tools/personmask
-swiftc -O tools/faces.swift -o tools/faces
-```
+Dosya Monti'yi de indirir; Mac'te iki küçük aracı derler (`tools/`), Windows'ta derlenecek bir şey yok.
 
 ## Kullanım
 
 İki adım var. Arada planı sen (ya da ajanın) gözden geçirirsin.
 
 ```bash
-~/monti/venv/bin/python monti.py analyze ~/Desktop/video.mp4      # yazıya döker, work/video/plan.json yazar
+python monti.py analyze video.mp4          # yazıya döker, work/video/plan.json yazar
 # plan.json'u düzenle: başlık, kesimler, efektler, kapanış (PLAN.md)
-~/monti/venv/bin/python monti.py render work/video/plan.json      # bitmiş videoyu yazar
+python monti.py render work/video/plan.json # bitmiş videoyu yazar
 ```
+
+`python`, kurulumda açılan ortamınki: Mac'te `~/monti/venv/bin/python`, Windows'ta `$HOME\monti\venv\Scripts\python.exe`.
 
 Türkçe dışındaki videolar için: `monti.py analyze video.mp4 --lang en`.
 

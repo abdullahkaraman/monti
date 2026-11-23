@@ -11,6 +11,7 @@ import base64
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -18,7 +19,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 W, H, FPS = 1080, 1920, 30
-WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
+MAC = sys.platform == "darwin"
 SFX = Path(os.environ.get("MONTI_SFX", Path.home() / "monti" / "sfx-kit"))
 SOUNDS = {  # name -> (sfx-kit file, volume)
     "pop": ("sounds/pops/pop-medium-in.wav", 0.5),
@@ -54,13 +55,35 @@ Return [] if there are none."""
 
 
 def gemini_key():
-    """The key is read from the macOS Keychain (see the setup guide), or GEMINI_API_KEY; never from a file."""
+    """GEMINI_API_KEY, or the system password store under service "monti", account "gemini-api-key"
+    (Keychain on Mac, Credential Manager on Windows; see the setup guide). Never read from a file."""
     if os.environ.get("GEMINI_API_KEY"):
         return os.environ["GEMINI_API_KEY"]
     try:
-        return sh(["security", "find-generic-password", "-s", "monti", "-a", "gemini-api-key", "-w"]).stdout.strip()
-    except subprocess.CalledProcessError:
-        return None
+        import keyring
+        return keyring.get_password("monti", "gemini-api-key")
+    except ImportError:
+        pass
+    if MAC:
+        try:
+            return sh(["security", "find-generic-password", "-s", "monti", "-a", "gemini-api-key", "-w"]).stdout.strip()
+        except subprocess.CalledProcessError:
+            return None
+    return None
+
+
+def transcribe(wav, work, lang):
+    """Word-timed transcript. mlx-whisper (fast on Apple Silicon) if installed, else openai-whisper; same JSON."""
+    if shutil.which("mlx_whisper"):
+        cmd = ["mlx_whisper", str(wav), "--model", "mlx-community/whisper-large-v3-turbo", "--word-timestamps", "True",
+               "--output-format", "json", "--output-dir", str(work)]
+    elif shutil.which("whisper"):
+        cmd = ["whisper", str(wav), "--model", "turbo", "--word_timestamps", "True",
+               "--output_format", "json", "--output_dir", str(work)]
+    else:
+        sys.exit("No Whisper found: install mlx-whisper (Mac) or openai-whisper (Windows); see the setup guide.")
+    sh(cmd + (["--language", lang]))
+    return json.load(open(Path(work) / (Path(wav).stem + ".json")))
 
 
 def gemini_fillers(video, work, key):
@@ -85,9 +108,7 @@ def analyze(args):
     work.mkdir(parents=True, exist_ok=True)
     wav = work / "audio.wav"
     sh(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-vn", "-ac", "1", "-ar", "16000", str(wav)])
-    sh(["mlx_whisper", str(wav), "--model", WHISPER_MODEL, "--language", args.lang, "--word-timestamps", "True",
-        "--output-format", "json", "--output-dir", str(work)])
-    tr = json.load(open(work / "audio.json"))
+    tr = transcribe(wav, work, args.lang)
     words = [{"word": w["word"].strip(), "start": round(w["start"], 2), "end": round(w["end"], 2)}
              for s in tr["segments"] for w in s.get("words", [])]
     while words and words[-1]["end"] - words[-1]["start"] < 0.05:  # Whisper's zero-length tail tokens
@@ -163,6 +184,7 @@ def apply_replace(words, replace):
 def render(args):
     sys.path.insert(0, str(HERE))
     import draw
+    import vision
     from PIL import Image
     plan = json.load(open(args.plan))
     work = Path(args.plan).resolve().parent
@@ -252,8 +274,8 @@ def render(args):
     vlast = "vc"
 
     def person_overlay(i, e, d, paint):
-        """Per-frame overlay for effects that need the person mask (tools/personmask, macOS Vision). Frames come
-        from the source at the effect's time, so the window is clipped to the kept piece it starts in."""
+        """Per-frame overlay for effects that need the person mask (vision.py). Frames come from the source at
+        the effect's time, so the window is clipped to the kept piece it starts in."""
         d = min(d, next((b for a, b in keep if a <= e["at"] <= b), e["at"] + d) - e["at"])
         base = work / f"fx{i}"
         for sub in ("src", "mask", "ov"):
@@ -262,13 +284,12 @@ def render(args):
         sh(["ffmpeg", "-v", "error", "-y", "-ss", f"{e['at']:.3f}", "-t", f"{d:.3f}", "-i", src,
             "-vf", f"fps={FPS},scale={W}:{H}", str(base / "src" / "%04d.png")])
         frames = sorted((base / "src").glob("*.png"))
-        sh([str(HERE / "tools" / "personmask"), str(base / "mask"), *map(str, frames)])
+        vision.masks(frames, base / "mask")
         heads = []
         if e["type"] == "orbit":  # face box per frame, averaged over 9 frames so the ring does not shake
-            got = sh([str(HERE / "tools" / "faces"), *map(str, frames)]).stdout.splitlines()
             last = (W // 2, 760, 520)
-            for ln in got:
-                last = tuple(int(v) for v in ln.split()[1:4]) if not ln.endswith("none") else last
+            for box in vision.faces(frames):
+                last = box or last
                 heads.append(last)
             heads = [tuple(sum(h[c] for h in heads[max(0, k - 4):k + 5]) / len(heads[max(0, k - 4):k + 5])
                            for c in range(3)) for k in range(len(heads))]
