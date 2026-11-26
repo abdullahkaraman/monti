@@ -1,0 +1,170 @@
+{
+ "kit": {
+  "masa": [],
+  "face": [
+   512,
+   1085
+  ],
+  "hold": 0.4,
+  "speed": 1,
+  "ui": [
+   {
+    "type": "fon",
+    "behind": true,
+    "at": 0.62,
+    "end": 3.7,
+    "color": "#14130F",
+    "cut": true
+   },
+   {
+    "type": "yazi",
+    "behind": true,
+    "at": 0.7,
+    "end": 3.7,
+    "cut": true,
+    "lines": [
+     {
+      "text": "ABİ",
+      "at": 0.75,
+      "out": 1.72,
+      "font": "grotesk",
+      "size": 158,
+      "x": 205,
+      "y": 320,
+      "ses": "hisir"
+     },
+     {
+      "text": "ABİ",
+      "at": 1.15,
+      "out": 1.72,
+      "font": "grotesk",
+      "size": 158,
+      "x": 540,
+      "y": 320
+     },
+     {
+      "text": "ABİ",
+      "at": 1.5,
+      "out": 1.74,
+      "font": "grotesk",
+      "size": 158,
+      "x": 875,
+      "y": 320,
+      "color": "#FFD60A",
+      "step": 0.01
+     },
+     {
+      "text": "Video işini",
+      "at": 1.75,
+      "out": 2.62,
+      "font": "serif",
+      "size": 178,
+      "y": 310,
+      "ses": "hisir"
+     },
+     {
+      "text": "nasıl?",
+      "at": 2.56,
+      "font": "italik",
+      "size": 330,
+      "y": 330,
+      "color": "#FFD60A",
+      "step": 0.02
+     }
+    ]
+   },
+   {
+    "type": "komut",
+    "at": 3.8200000000000003,
+    "sendAt": 5.0,
+    "end": 5.5,
+    "text": "arkayı karart",
+    "y": 232
+   },
+   {
+    "type": "silmecizgi",
+    "at": 5.25,
+    "end": 6.1
+   },
+   {
+    "type": "fon",
+    "behind": true,
+    "at": 5.25,
+    "end": 8.55,
+    "color": "rgba(12,11,9,.9)",
+    "cut": true,
+    "outAt": 7.95
+   },
+   {
+    "type": "yazi",
+    "behind": true,
+    "at": 5.6,
+    "end": 8.100000000000001,
+    "lines": [
+     {
+      "text": "KARANLIK",
+      "at": 5.65,
+      "out": 6.65,
+      "font": "serif",
+      "size": 205,
+      "y": 320,
+      "step": 0.04
+     }
+    ]
+   },
+   {
+    "type": "komut",
+    "at": 6.6,
+    "sendAt": 7.7,
+    "end": 8.2,
+    "text": "dergi kapağı yap",
+    "y": 232
+   },
+   {
+    "type": "silmecizgi",
+    "at": 7.95,
+    "end": 8.75
+   },
+   {
+    "type": "kapak",
+    "behind": true,
+    "at": 8.2,
+    "end": 11.0,
+    "kicker": "SAYI 02 · KASIM 2026 · KURGU: MONTİ",
+    "color": "#14130F"
+   },
+   {
+    "type": "yazi",
+    "behind": true,
+    "at": 8.25,
+    "end": 11.0,
+    "lines": [
+     {
+      "text": "MONTİFX",
+      "at": 8.3,
+      "font": "serif",
+      "size": 222,
+      "y": 425,
+      "step": 0.045,
+      "color": "#14130F",
+      "ses": "parilti"
+     }
+    ]
+   }
+  ],
+  "capFull": 1470,
+  "fps": 30,
+  "capStyle": "dergi",
+  "looks": [
+   {
+    "at": 7.95,
+    "end": 11.0,
+    "style": "sicak"
+   }
+  ]
+ },
+ "range": [
+  0,
+  10.0
+ ]
+}

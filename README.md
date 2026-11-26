@@ -8,6 +8,8 @@ Dikey konuşma videolarını kurgulayan küçük bir kurgucu. Kurgu programı yo
 - **Altyazı:** Üçer kelime, söylenen kelime sarı.
 - **Basit efektler:** yakınlaştırma, sadece arka planı karartan spotlight, kafanın etrafında dönen halka,
   kaydet düğmesi ve "Link bio'da" kapanışı.
+- **MontiFX (`fx/`, isteğe bağlı):** HTML/CSS ile çizilen şeffaf efekt kartları, baş arkası metin, renk geçişleri
+  (karanlık, sıcak, eski kamera/VCR) ve atölye parçaları (`fx/README.md`). Sıfır npm paketi; Node 22+ ve Chrome/Edge ile çalışır.
 - **Ses kutusu:** sfx-kit'ten pop, ding, whoosh.
 - **Defter:** `KURALLAR.md`. Her geri bildirim bir kurala dönüşür, sonraki videoda aynı hata yapılmaz.
 

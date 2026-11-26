@@ -39,6 +39,55 @@ def duration(path):
     return float(sh(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path]).stdout)
 
 
+def picture_delay(path):
+    """Seconds ffmpeg shows the picture too early. A Samsung phone starts the picture ~0.2 s after the sound and says so
+    in the file's edit list; ffmpeg drops that gap ("Missing key frame") and pulls the picture to zero."""
+    import struct
+    found = {}
+
+    def walk(f, end, video):
+        while f.tell() + 8 <= end:
+            o = f.tell()
+            n, kind = struct.unpack(">I4s", f.read(8))
+            if n == 1: n = struct.unpack(">Q", f.read(8))[0]
+            if n == 0: n = end - o
+            if n < 8: return
+            if kind == b"trak": video = {}
+            if kind in (b"moov", b"trak", b"mdia", b"edts"):
+                walk(f, o + n, video)
+            elif video is not None and kind in (b"elst", b"mdhd", b"hdlr"):
+                d = f.read(o + n - f.tell())
+                if kind == b"hdlr": video["type"] = d[8:12]
+                if kind == b"mdhd": video["scale"] = struct.unpack(">I", d[20:24] if d[0] else d[12:16])[0]
+                if kind == b"elst" and d[0] == 0 and struct.unpack(">I", d[4:8])[0] == 1:
+                    video["media"] = struct.unpack(">i", d[12:16])[0]
+            if kind == b"trak" and video.get("type") == b"vide": found.update(video)
+            f.seek(o + n)
+
+    with open(path, "rb") as f:
+        walk(f, os.path.getsize(path), None)
+    if found.get("media", 0) <= 0:
+        return 0.0
+
+    def first(*opt):
+        out = sh(["ffprobe", "-v", "error", *opt, "-read_intervals", "%+#30", "-select_streams", "v:0", "-show_entries",
+                  "packet=pts_time", "-of", "csv=p=0", str(path)]).stdout
+        return min(float(x) for x in out.replace(",", " ").split() if x != "N/A")
+
+    return max(0.0, first("-ignore_editlist", "1") - found["media"] / found["scale"] - first())
+
+
+def synced(path, work):
+    """The same recording with the picture put back where the phone recorded it (stream copy), or the file itself."""
+    d = picture_delay(path)
+    if d < 0.02:
+        return Path(path)
+    out = Path(work) / (Path(path).stem + "_sync.mp4")
+    sh(["ffmpeg", "-v", "error", "-y", "-itsoffset", f"{d:.4f}", "-i", str(path), "-i", str(path), "-map", "0:v:0", "-map", "1:a:0",
+        "-c", "copy", str(out)])
+    return out
+
+
 def silences(wav, min_len):
     log = subprocess.run(["ffmpeg", "-i", wav, "-af", f"silencedetect=n=-35dB:d={min_len}", "-f", "null", "-"],
                          capture_output=True, text=True).stderr
@@ -103,9 +152,10 @@ def gemini_fillers(video, work, key):
 
 
 def analyze(args):
-    src = Path(args.input).resolve()
-    work = HERE / "work" / src.stem
+    original = Path(args.input).resolve()
+    work = HERE / "work" / original.stem
     work.mkdir(parents=True, exist_ok=True)
+    src = synced(original, work)
     wav = work / "audio.wav"
     sh(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-vn", "-ac", "1", "-ar", "16000", str(wav)])
     tr = transcribe(wav, work, args.lang)
@@ -125,6 +175,7 @@ def analyze(args):
 
     plan = {
         "source": str(src),
+        "output": str(original.with_name(original.stem + "_monti.mp4")),
         "range": [round(max(words[0]["start"] - 0.1, 0), 2) if words else 0.0, round(duration(str(src)), 2)],
         "cuts": [],          # [[start, end, "why"], ...] parts to remove (a fumble, a repeated sentence)
         "fillers": fillers,  # Gemini's filler sounds; fix start/end or set "skip": true to keep one
@@ -189,7 +240,7 @@ def render(args):
     plan = json.load(open(args.plan))
     work = Path(args.plan).resolve().parent
     src = plan["source"]
-    out = args.output or str(Path(src).with_name(Path(src).stem + "_monti.mp4"))
+    out = args.output or plan.get("output") or str(Path(src).with_name(Path(src).stem + "_monti.mp4"))
     wav = str(work / "audio.wav")
 
     # 1) what stays: the range, minus long silences, cuts and fillers
@@ -206,6 +257,7 @@ def render(args):
     keep = [(a, b) for a, b in keep
             if any(a <= m <= b for m in mids) or any(a < pb and b > pa for pa, pb in prot)
             or (b - a >= 0.2 and any(sa <= a + 0.02 and b - 0.02 <= sb for sa, sb in pauses))]
+    (work / "timeline.json").write_text(json.dumps({"keep": keep}))
 
     def remap(t):  # source seconds -> output seconds
         off = 0.0
@@ -221,26 +273,27 @@ def render(args):
     if outro: total += outro.get("hold", 2.2)
 
     # 2) subtitles: up to three words at a time, the word being spoken in yellow
-    words = apply_replace(plan["words"], plan.get("replace", {}))
-    caps, cur = [], []
-    for w in words:
-        if not any(a <= (w["start"] + w["end"]) / 2 <= b for a, b in keep):
-            continue
-        if cur and (len(cur) == 3 or w["start"] - cur[-1]["end"] > 0.4 or cur[-1]["word"][-1] in ".?!,"):
-            caps.append(cur); cur = []
-        cur.append(w)
-    if cur: caps.append(cur)
     events = []
-    for j, c in enumerate(caps):
-        ws = [w["word"] for w in c]
-        ws[-1] = ws[-1].rstrip(".,")
-        st = [remap(w["start"]) for w in c]
-        for k in range(1, len(st)): st[k] = max(st[k], st[k - 1])
-        e = max(remap(c[-1]["end"]), st[-1] + 0.3)
-        if j + 1 < len(caps): e = min(e + 0.25, remap(caps[j + 1][0]["start"]))
-        for k in range(len(c)):
-            a, b = st[k], (st[k + 1] if k + 1 < len(c) else e)
-            if b > a: events.append((a, b, ws, k + 1))
+    if plan.get("captions", True):
+        words = apply_replace(plan["words"], plan.get("replace", {}))
+        caps, cur = [], []
+        for w in words:
+            if not any(a <= (w["start"] + w["end"]) / 2 <= b for a, b in keep):
+                continue
+            if cur and (len(cur) == 3 or w["start"] - cur[-1]["end"] > 0.4 or cur[-1]["word"][-1] in ".?!,"):
+                caps.append(cur); cur = []
+            cur.append(w)
+        if cur: caps.append(cur)
+        for j, c in enumerate(caps):
+            ws = [w["word"] for w in c]
+            ws[-1] = ws[-1].rstrip(".,")
+            st = [remap(w["start"]) for w in c]
+            for k in range(1, len(st)): st[k] = max(st[k], st[k - 1])
+            e = max(remap(c[-1]["end"]), st[-1] + 0.3)
+            if j + 1 < len(caps): e = min(e + 0.25, remap(caps[j + 1][0]["start"]))
+            for k in range(len(c)):
+                a, b = st[k], (st[k + 1] if k + 1 < len(c) else e)
+                if b > a: events.append((a, b, ws, k + 1))
     title, until = plan["title"]["lines"], plan["title"]["until"]
     subs = work / "subs"
     subs.mkdir(exist_ok=True)
@@ -263,8 +316,12 @@ def render(args):
     labels = iter(range(10 ** 6))
     nl = lambda: f"x{next(labels)}"
     fc, cat = "", ""
+    first = float(sh(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=start_time",
+                      "-of", "default=nw=1:nk=1", src]).stdout.split()[0])
     for k, (a, b) in enumerate(keep):
-        fc += (f"[0:v]trim={a}:{b},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H}[v{k}];"
+        # a piece that starts before the picture does keeps that gap (first frame held), or the lips move early again
+        zero = f"setpts=PTS-{a}/TB,fps={FPS}:start_time=0" if a < first else f"setpts=PTS-STARTPTS,fps={FPS}"
+        fc += (f"[0:v]trim={a}:{b},{zero},scale={W}:{H}[v{k}];"
                f"[0:a]atrim={a}:{b},asetpts=PTS-STARTPTS,afade=t=in:d=0.02,afade=t=out:st={max(b - a - 0.02, 0)}:d=0.02[a{k}];")
         cat += f"[v{k}][a{k}]"
     fc += f"{cat}concat=n={len(keep)}:v=1:a=1[vc0][ac0];"

@@ -1,0 +1,39 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,800;1,900&family=Caveat+Brush&family=JetBrains+Mono:wght@500;700&family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,500&family=Archivo:wdth,wght@100,500;100,600;112,850&display=block" rel="stylesheet">
+<style>
+  :root { --paper: #1D4A3A; --ink: #0E1F18; --cream: #F7F2E2; --yellow: #FFD60A; --red: #FF5A52; --green: #35C46F; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: transparent; }
+  body { font-family: "Barlow Condensed"; font-style: italic; font-weight: 900; color: var(--ink); }
+  #mat { position: absolute; inset: 0; background-color: var(--paper); background-image:
+      radial-gradient(120% 70% at 50% 25%, rgba(255,255,255,.07), transparent 60%),
+      linear-gradient(rgba(222,236,196,.16) 2px, transparent 2px), linear-gradient(90deg, rgba(222,236,196,.16) 2px, transparent 2px),
+      linear-gradient(rgba(222,236,196,.07) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(222,236,196,.07) 1.5px, transparent 1.5px);
+      background-size: auto, 240px 240px, 240px 240px, 48px 48px, 48px 48px; }
+  svg.abs, .abs { position: absolute; overflow: visible; }
+  .c { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+  .c > .in { position: absolute; transform: translate(-50%, -50%); display: flex; white-space: nowrap; }
+  .tag { position: relative; display: inline-block; line-height: 1; }
+  .tag > svg { position: absolute; inset: 0; overflow: visible; }
+  .tag > span { position: relative; display: block; }
+  .script { font-family: "Caveat Brush"; font-style: normal; font-weight: 400; }
+  .cap { position: absolute; left: 60px; width: 960px; text-align: center; font-size: 92px; line-height: 1.12; color: #fff;
+         -webkit-text-stroke: 18px var(--ink); paint-order: stroke fill; filter: drop-shadow(0 7px 0 var(--ink)); }
+  .cap i { display: inline-block; position: relative; padding: 0 10px; font-style: inherit; }
+  .cap i.on { color: var(--yellow); }
+  .cap.dergi { font: 600 68px/1.2 Archivo; -webkit-text-stroke: 0; color: #F3EEE3; letter-spacing: -.01em; filter: drop-shadow(0 2px 10px rgba(0,0,0,.65)); }
+  .cap.dergi i { padding: 0 7px; } .cap.dergi i.on { color: #F3EEE3; }
+  .d { position: absolute; white-space: nowrap; line-height: 1; color: #F3EEE3; transform: translate(-50%, -50%); font-style: normal; }
+  .d b { display: inline-block; font-weight: inherit; white-space: pre; }
+  .d.serif { font: 500 100px/1 "Bodoni Moda"; letter-spacing: -.035em; } .d.italik { font: italic 500 100px/1 "Bodoni Moda"; letter-spacing: -.03em; }
+  .d.grotesk { font: 850 100px/1 Archivo; font-stretch: 112%; letter-spacing: -.035em; } .d.mono { font: 500 30px/1 "JetBrains Mono"; letter-spacing: .16em; }
+  .d.chrome b { background: linear-gradient(180deg, #FFFFFF 0%, #D9E2EC 28%, #414852 50%, #F4F7FA 68%, #939EA9 100%);
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                filter: drop-shadow(0 5px 0 rgba(10,12,16,.85)) drop-shadow(0 0 22px rgba(255,255,255,.32)); }
+  .vcr { position: absolute; right: 56px; top: 140px; text-align: right; font: 700 32px/1.35 "JetBrains Mono"; letter-spacing: .08em;
+         color: rgba(244,244,240,.92); font-style: normal; text-shadow: 0 2px 10px rgba(0,0,0,.8); }
+  .komut { position: absolute; left: 60px; width: 960px; height: 172px; border-radius: 34px; background: #F7F3EA; box-shadow: 0 26px 70px rgba(0,0,0,.38), 0 2px 0 rgba(255,255,255,.8) inset; color: #14130F; font-style: normal; }
+  .komut .et { position: absolute; left: 42px; top: 30px; font: 500 23px/1 "JetBrains Mono"; letter-spacing: .14em; color: #8B8577; }
+  .komut .me { position: absolute; left: 42px; top: 76px; font: 500 56px/1.1 Archivo; letter-spacing: -.02em; white-space: pre; }
+  .komut .dg { position: absolute; right: 34px; top: 38px; width: 96px; height: 96px; border-radius: 50%; background: #14130F; }
+</style></head><body><div id="root"></div><script src="kit.js"></script></body></html>
